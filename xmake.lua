@@ -1,3 +1,5 @@
+set_project("micro_sockets")
+set_version("0.1.0")
 set_languages("c11")
 
 add_rules("mode.debug", "mode.release")
