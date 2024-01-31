@@ -5,7 +5,7 @@ set_languages("c11")
 add_rules("mode.debug", "mode.release")
 
 add_repositories("hendrikboeck-ppa https://github.com/hendrikboeck/xmake-ppa.git main")
-add_requires("ccms @dev")
+add_requires("ccms")
 
 add_rules("plugin.compile_commands.autoupdate", { outputdir = "." })
 target("micro-sockets")
