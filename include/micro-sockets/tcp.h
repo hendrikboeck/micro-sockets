@@ -45,7 +45,7 @@ typedef int32_t Sock;
 // flags for receiving message
 #define TCP_BUFTRUNC 1
 
-extern inline ssize_t _tcp_recv(Sock fd, SizedMemory *buf, size_t flags) {
+static inline ssize_t _tcp_recv(Sock fd, SizedMemory *buf, size_t flags) {
   int32_t buf_truncate = flags & TCP_BUFTRUNC;
   size_t buf_size = buf_truncate ? buf->size - 1 : buf->size;
   ssize_t len = recv(fd, buf->ptr, buf_size, 0);
@@ -55,11 +55,11 @@ extern inline ssize_t _tcp_recv(Sock fd, SizedMemory *buf, size_t flags) {
   return len;
 }
 
-extern inline ssize_t _tcp_send(Sock fd, Box data) {
+static inline ssize_t _tcp_send(Sock fd, Box data) {
   return send(fd, data.ptr, data.size, 0);
 }
 
-extern inline int32_t _tcp_close(Sock fd) {
+static inline int32_t _tcp_close(Sock fd) {
 #ifdef _WIN32
   return closesocket(fd);
 #else
@@ -81,15 +81,15 @@ struct TcpConnection {
   socklen_t sa_len;
 };
 
-extern inline int32_t tcp_connection__close(TcpConnection *conn) {
+static inline int32_t tcp_connection__close(TcpConnection *conn) {
   return _tcp_close(conn->fd);
 }
 
-extern inline ssize_t tcp_connection__send(TcpConnection *conn, Box data) {
+static inline ssize_t tcp_connection__send(TcpConnection *conn, Box data) {
   return _tcp_send(conn->fd, data);
 }
 
-extern inline ssize_t tcp_connection__recv(TcpConnection *conn,
+static inline ssize_t tcp_connection__recv(TcpConnection *conn,
                                            SizedMemory *buf, size_t flags) {
   return _tcp_recv(conn->fd, buf, flags);
 }
@@ -110,13 +110,13 @@ struct TcpServer {
   size_t flags;
 };
 
-extern inline void tcp_server__free(TcpServer *self) {
+static inline void tcp_server__free(TcpServer *self) {
   if (self->buf != NULL)
     sized_memory__free(self->buf);
   _M_free(self);
 }
 
-extern inline TcpServer *tcp_server__new(const char *addr, const uint16_t port,
+static inline TcpServer *tcp_server__new(const char *addr, const uint16_t port,
                                          const size_t flags) {
 #ifdef _WIN32
   // initialize windows specific winsock
@@ -158,7 +158,7 @@ extern inline TcpServer *tcp_server__new(const char *addr, const uint16_t port,
   return self;
 }
 
-extern inline int32_t tcp_server__attach_buf(TcpServer *self,
+static inline int32_t tcp_server__attach_buf(TcpServer *self,
                                              SizedMemory *buf) {
   if (self->buf != NULL)
     return 1;
@@ -167,13 +167,13 @@ extern inline int32_t tcp_server__attach_buf(TcpServer *self,
   return 0;
 }
 
-extern inline SizedMemory *tcp_server__dettach_buf(TcpServer *self) {
+static inline SizedMemory *tcp_server__dettach_buf(TcpServer *self) {
   SizedMemory *result = self->buf;
   self->buf = NULL;
   return result;
 }
 
-extern inline int32_t tcp_server__listen(TcpServer *self, const int32_t n) {
+static inline int32_t tcp_server__listen(TcpServer *self, const int32_t n) {
   assert(self->buf != NULL);
 
   if (listen(self->sock, n) == -1)
@@ -181,7 +181,7 @@ extern inline int32_t tcp_server__listen(TcpServer *self, const int32_t n) {
   return 0;
 }
 
-extern inline TcpConnection tcp_server__accept(TcpServer *self) {
+static inline TcpConnection tcp_server__accept(TcpServer *self) {
   TcpConnection conn;
   struct sockaddr *sender_sa;
 
@@ -195,7 +195,7 @@ extern inline TcpConnection tcp_server__accept(TcpServer *self) {
   return conn;
 }
 
-extern inline Box tcp_server__recv(TcpServer *self, TcpConnection *conn) {
+static inline Box tcp_server__recv(TcpServer *self, TcpConnection *conn) {
   ssize_t size = tcp_connection__recv(conn, self->buf, TCP_BUFTRUNC);
 
   if (size < 0)
@@ -204,7 +204,7 @@ extern inline Box tcp_server__recv(TcpServer *self, TcpConnection *conn) {
   return box__ctor(self->buf->ptr, _M_cast(size_t, size));
 }
 
-extern inline int32_t tcp_server__shutdown(TcpServer *self) {
+static inline int32_t tcp_server__shutdown(TcpServer *self) {
   return _tcp_close(self->sock);
 }
 
@@ -227,13 +227,13 @@ struct TcpClient {
   SizedMemory *buf;
 };
 
-extern inline void tcp_client__free(TcpClient *self) {
+static inline void tcp_client__free(TcpClient *self) {
   if (self->buf != NULL)
     sized_memory__free(self->buf);
   free(self);
 }
 
-extern inline TcpClient *tcp_client__new(const char *addr, const uint16_t port,
+static inline TcpClient *tcp_client__new(const char *addr, const uint16_t port,
                                          const size_t flags) {
 #ifdef _WIN32
   // initialize windows specific winsock
@@ -268,7 +268,7 @@ extern inline TcpClient *tcp_client__new(const char *addr, const uint16_t port,
   return self;
 }
 
-extern inline int32_t tcp_client__attach_buf(TcpClient *self,
+static inline int32_t tcp_client__attach_buf(TcpClient *self,
                                              SizedMemory *buf) {
   if (self->buf != NULL)
     return 1;
@@ -277,13 +277,13 @@ extern inline int32_t tcp_client__attach_buf(TcpClient *self,
   return 0;
 }
 
-extern inline SizedMemory *tcp_client__dettach_buf(TcpClient *self) {
+static inline SizedMemory *tcp_client__dettach_buf(TcpClient *self) {
   SizedMemory *result = self->buf;
   self->buf = NULL;
   return result;
 }
 
-extern inline int32_t tcp_client__connect(TcpClient *self) {
+static inline int32_t tcp_client__connect(TcpClient *self) {
   struct sockaddr *sa_ref;
 
   if (self->_proto == AF_INET)
@@ -294,21 +294,21 @@ extern inline int32_t tcp_client__connect(TcpClient *self) {
   return connect(self->sock, sa_ref, self->_server_addr_len);
 }
 
-extern inline int32_t tcp_client__close(TcpClient *self) {
+static inline int32_t tcp_client__close(TcpClient *self) {
   return _tcp_close(self->sock);
 }
 
-extern inline TcpConnection
+static inline TcpConnection
 tcp_client__as_tcp_connection(const TcpClient *self) {
   return (TcpConnection){self->sock, self->_server_addr,
                          self->_server_addr_len};
 }
 
-extern inline ssize_t tcp_client__send(TcpClient *self, Box data) {
+static inline ssize_t tcp_client__send(TcpClient *self, Box data) {
   return _tcp_send(self->sock, data);
 }
 
-extern inline Box tcp_client__recv(TcpClient *self) {
+static inline Box tcp_client__recv(TcpClient *self) {
   ssize_t size = _tcp_recv(self->sock, self->buf, TCP_BUFTRUNC);
 
   if (size < 0)

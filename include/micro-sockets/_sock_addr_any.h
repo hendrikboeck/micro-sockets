@@ -25,17 +25,17 @@ union _SockAddrAny {
   struct sockaddr_in6 inet6;
 };
 
-extern inline _SockAddrAny
+static inline _SockAddrAny
 _sock_addr_any__from_sockaddr_in(struct sockaddr_in sa) {
   return (_SockAddrAny){.inet = sa};
 }
 
-extern inline _SockAddrAny
+static inline _SockAddrAny
 _sock_addr_any__from_sockaddr_in6(struct sockaddr_in6 sa) {
   return (_SockAddrAny){.inet6 = sa};
 }
 
-extern inline struct sockaddr_in
+static inline struct sockaddr_in
 sockaddr_in__from_addr_port(const char *addr, const uint16_t port) {
   struct sockaddr_in sa;
 
@@ -47,7 +47,7 @@ sockaddr_in__from_addr_port(const char *addr, const uint16_t port) {
   return sa;
 }
 
-extern inline struct sockaddr_in6
+static inline struct sockaddr_in6
 sockaddr_in6__from_addr_port(const char *addr, const uint16_t port) {
   struct sockaddr_in6 sa;
 
@@ -59,7 +59,7 @@ sockaddr_in6__from_addr_port(const char *addr, const uint16_t port) {
   return sa;
 }
 
-extern inline _SockAddrAny _sock_addr_any__ctor(const sa_family_t proto,
+static inline _SockAddrAny _sock_addr_any__ctor(const sa_family_t proto,
                                                 const char *addr,
                                                 const uint16_t port) {
   assert(proto == AF_INET || proto == AF_INET6);
