@@ -17,9 +17,19 @@
 /* with this program.  If not, see <https://www.gnu.org/licenses/>.           */
 /******************************************************************************/
 
-#ifndef __MICRO_SOCKETS_UDP_H
-#define __MICRO_SOCKETS_UDP_H
+#ifndef __MICRO_SOCKETS___DEFS__H
+#define __MICRO_SOCKETS___DEFS__H
 
-// TODO: Implement UDP socket functions
+#if defined(_WIN32) || defined(_WIN64)
+#define __MICRO_SOCKETS__IS_WINDOWS 1
+#else
+#define __MICRO_SOCKETS__IS_WINDOWS 0
+#endif
 
-#endif  // __MICRO_SOCKETS_UDP_H
+#ifdef __MICRO_SOCKETS__EXTERN
+#define __MICRO_SOCKETS__INLINE extern inline
+#else
+#define __MICRO_SOCKETS__INLINE static inline
+#endif
+
+#endif  // __MICRO_SOCKETS___DEFS__H
