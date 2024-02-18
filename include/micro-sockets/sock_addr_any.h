@@ -25,7 +25,11 @@ extern "C" {
 #endif
 
 // clang-format off
+
+// Pin to the top of file, becuase it is used in the definitions of include
+// macros like __MICRO_SOCKETS__IS_WINDOWS, DO NOT MOVE THIS INCLUDE !!!
 #include "micro-sockets/_defs.h"
+
 // clang-format on
 
 #include <assert.h>
@@ -44,46 +48,46 @@ extern "C" {
 #include "ccms/_macros.h"
 
 /**
- * @brief Typedef for the _SockAddrAny union.
+ * @brief Typedef for the SockAddrAny union.
  */
-typedef union _SockAddrAny _SockAddrAny;
+typedef union SockAddrAny SockAddrAny;
 
 /**
  * @brief Union to hold either a sockaddr_in or sockaddr_in6 structure.
  *
- * @var struct sockaddr_in _SockAddrAny::inet
+ * @var struct sockaddr_in SockAddrAny::inet
  * IPv4 socket address
  *
- * @var struct sockaddr_in6 _SockAddrAny::inet6
+ * @var struct sockaddr_in6 SockAddrAny::inet6
  * IPv6 socket address
  */
-union _SockAddrAny {
+union SockAddrAny {
   struct sockaddr_in inet;
   struct sockaddr_in6 inet6;
 };
 
 /**
- * @brief Converts a sockaddr_in structure to a _SockAddrAny union.
+ * @brief Converts a sockaddr_in structure to a SockAddrAny union.
  *
  * @param sa The sockaddr_in structure to convert.
  *
- * @return The converted _SockAddrAny union.
+ * @return The converted SockAddrAny union.
  */
 __MICRO_SOCKETS__INLINE
-_SockAddrAny _sock_addr_any__from_sockaddr_in(struct sockaddr_in sa) {
-  return (_SockAddrAny){.inet = sa};
+SockAddrAny sock_addr_any__from_sockaddr_in(struct sockaddr_in sa) {
+  return (SockAddrAny){.inet = sa};
 }
 
 /**
- * @brief Converts a sockaddr_in6 structure to a _SockAddrAny union.
+ * @brief Converts a sockaddr_in6 structure to a SockAddrAny union.
  *
  * @param sa The sockaddr_in6 structure to convert.
  *
- * @return The converted _SockAddrAny union.
+ * @return The converted SockAddrAny union.
  */
 __MICRO_SOCKETS__INLINE
-_SockAddrAny _sock_addr_any__from_sockaddr_in6(struct sockaddr_in6 sa) {
-  return (_SockAddrAny){.inet6 = sa};
+SockAddrAny sock_addr_any__from_sockaddr_in6(struct sockaddr_in6 sa) {
+  return (SockAddrAny){.inet6 = sa};
 }
 
 /**
@@ -129,24 +133,24 @@ struct sockaddr_in6 sockaddr_in6__from_addr_port(const char* addr,
 }
 
 /**
- * @brief Constructs a _SockAddrAny union from a protocol, address, and port.
+ * @brief Constructs a SockAddrAny union from a protocol, address, and port.
  *
  * @param proto The protocol to use (AF_INET or AF_INET6).
  * @param addr The address to use.
  * @param port The port to use.
  *
- * @return The constructed _SockAddrAny union.
+ * @return The constructed SockAddrAny union.
  */
 __MICRO_SOCKETS__INLINE
-_SockAddrAny _sock_addr_any__ctor(const sa_family_t proto, const char* addr,
-                                  const uint16_t port) {
+SockAddrAny sock_addr_any__ctor(const sa_family_t proto, const char* addr,
+                                const uint16_t port) {
   assert(proto == AF_INET || proto == AF_INET6);
 
   if (proto == AF_INET)
-    return _sock_addr_any__from_sockaddr_in(
+    return sock_addr_any__from_sockaddr_in(
         sockaddr_in__from_addr_port(addr, port));
 
-  return _sock_addr_any__from_sockaddr_in6(
+  return sock_addr_any__from_sockaddr_in6(
       sockaddr_in6__from_addr_port(addr, port));
 }
 

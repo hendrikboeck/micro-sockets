@@ -25,9 +25,14 @@ extern "C" {
 #endif
 
 // clang-format off
+
+// Pin to the top of file, becuase it is used in the definitions of include
+// macros like __MICRO_SOCKETS__IS_WINDOWS, DO NOT MOVE THIS INCLUDE !!!
 #include "micro-sockets/_defs.h"
+
 // clang-format on
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +55,7 @@ extern "C" {
 #include "ccms/_macros.h"
 #include "ccms/box.h"
 #include "ccms/sized_memory.h"
-#include "micro-sockets/_sock_addr_any.h"
+#include "micro-sockets/sock_addr_any.h"
 
 //
 //
@@ -69,14 +74,14 @@ extern "C" {
  *
  * On Windows, a SOCKET is used
  */
-typedef SOCKET Sock;
+typedef SOCKET SockFd;
 #else
 /**
  * @brief Typedef for socket descriptor.
  *
  * On UNIX/Linux, an int32_t is used.
  */
-typedef int32_t Sock;
+typedef int32_t SockFd;
 #endif
 
 //
@@ -105,7 +110,7 @@ typedef int32_t Sock;
  * @return The length of the message received, or -1 on error.
  */
 __MICRO_SOCKETS__INLINE
-ssize_t _tcp_recv(Sock fd, SizedMemory* buf, size_t flags) {
+ssize_t _tcp_recv(SockFd fd, SizedMemory* buf, size_t flags) {
   int32_t buf_truncate = flags & TCP_BUFTRUNC;
   size_t buf_size = buf_truncate ? buf->size - 1 : buf->size;
   ssize_t len = recv(fd, buf->ptr, buf_size, 0);
@@ -123,7 +128,7 @@ ssize_t _tcp_recv(Sock fd, SizedMemory* buf, size_t flags) {
  * @return The number of bytes sent, or -1 on error.
  */
 __MICRO_SOCKETS__INLINE
-ssize_t _tcp_send(Sock fd, Box data) {
+ssize_t _tcp_send(SockFd fd, Box data) {
   return send(fd, data.ptr, data.size, 0);
 }
 
@@ -135,7 +140,7 @@ ssize_t _tcp_send(Sock fd, Box data) {
  * @return 0 on success, or -1 on error.
  */
 __MICRO_SOCKETS__INLINE
-int32_t _tcp_close(Sock fd) {
+int32_t _tcp_close(SockFd fd) {
 #if __MICRO_SOCKETS__IS_WINDOWS
   return closesocket(fd);
 #else
@@ -157,20 +162,38 @@ typedef struct TcpConnection TcpConnection;
 /**
  * @brief Structure representing a TCP connection.
  *
- * @var Sock TcpConnection::fd
+ * @var SockFd TcpConnection::fd
  * The socket descriptor.
  *
- * @var _SockAddrAny TcpConnection::sa_addr
+ * @var SockAddrAny TcpConnection::sa_addr
  * The socket address.
  *
  * @var socklen_t TcpConnection::sa_len
  * The length of the socket address.
  */
 struct TcpConnection {
-  Sock fd;
-  _SockAddrAny sa_addr;
+  SockFd fd;
+  SockAddrAny sa_addr;
   socklen_t sa_len;
 };
+
+/**
+ * @brief Creates a new TcpConnection.
+ *
+ * This function creates a new TcpConnection with the specified socket file
+ * descriptor, socket address, and socket address length.
+ *
+ * @param fd The socket file descriptor for the new TcpConnection.
+ * @param sa_addr The socket address for the new TcpConnection.
+ * @param sa_len The socket address length for the new TcpConnection.
+ *
+ * @return A new TcpConnection with the specified parameters.
+ */
+__MICRO_SOCKETS__INLINE
+TcpConnection tcp_connection__ctor(SockFd fd, SockAddrAny sa_addr,
+                                   socklen_t sa_len) {
+  return (TcpConnection){fd, sa_addr, sa_len};
+}
 
 /**
  * @brief Closes a TCP connection.
@@ -234,7 +257,7 @@ typedef struct TcpServer TcpServer;
 /**
  * @brief Structure representing a TCP server.
  *
- * @var Sock TcpServer::sock
+ * @var SockFd TcpServer::sock
  * The socket descriptor for the server.
  *
  * @var SizedMemory* TcpServer::buf
@@ -244,7 +267,7 @@ typedef struct TcpServer TcpServer;
  * Flags used for server configuration, such as TCP_SERVER_INET6.
  */
 struct TcpServer {
-  Sock sock;
+  SockFd sock;
   SizedMemory* buf;
   size_t flags;
 };
@@ -298,7 +321,7 @@ TcpServer* tcp_server__new(const char* addr, const uint16_t port,
   int32_t proto = (flags & TCP_SERVER_INET6) ? AF_INET6 : AF_INET;
 
   // Construct the socket address
-  _SockAddrAny sa = _sock_addr_any__ctor(proto, addr, port);
+  SockAddrAny sa = sock_addr_any__ctor(proto, addr, port);
 
   size_t sa_size;
   struct sockaddr* sa_ref;
@@ -496,7 +519,7 @@ typedef struct TcpClient TcpClient;
  * the length of the server address, the protocol used (IPv4 or IPv6),
  * the socket used for communication, and a buffer for receiving data.
  *
- * @var _SockAddrAny _server_addr
+ * @var SockAddrAny _server_addr
  * The server address to which the client is connected.
  *
  * @var size_t _server_addr_len
@@ -505,18 +528,18 @@ typedef struct TcpClient TcpClient;
  * @var int32_t _proto
  * The protocol used by the client (IPv4 or IPv6).
  *
- * @var Sock sock
+ * @var SockFd sock
  * The socket used by the client for communication with the server.
  *
  * @var SizedMemory *buf
  * The buffer used by the client for receiving data.
  */
 struct TcpClient {
-  _SockAddrAny _server_addr;
+  SockAddrAny _server_addr;
   size_t _server_addr_len;
   int32_t _proto;
 
-  Sock sock;
+  SockFd sock;
   SizedMemory* buf;
 };
 
@@ -577,7 +600,7 @@ TcpClient* tcp_client__new(const char* addr, const uint16_t port,
     self->_server_addr_len = sizeof(struct sockaddr_in);
   }
   // Initialize the server address
-  self->_server_addr = _sock_addr_any__ctor(self->_proto, addr, port);
+  self->_server_addr = sock_addr_any__ctor(self->_proto, addr, port);
 
   // Initialize the socket
   self->sock = socket(self->_proto, SOCK_STREAM, IPPROTO_TCP);
@@ -680,8 +703,8 @@ int32_t tcp_client__close(TcpClient* self) {
  */
 __MICRO_SOCKETS__INLINE
 TcpConnection tcp_client__as_tcp_connection(const TcpClient* self) {
-  return (TcpConnection){self->sock, self->_server_addr,
-                         self->_server_addr_len};
+  return tcp_connection__ctor(self->sock, self->_server_addr,
+                              self->_server_addr_len);
 }
 
 /**
