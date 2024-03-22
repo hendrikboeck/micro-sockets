@@ -27,6 +27,7 @@ also see [examples/tcp_server.c](./examples/tcp_server.c)
 
 ```c
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "ccms/_macros.h"
@@ -36,28 +37,27 @@ also see [examples/tcp_server.c](./examples/tcp_server.c)
 
 int32_t main(void) {
   // Create a new TCP server listening on 0.0.0.0:4040
-  tcp_server_t
-* server = tcp_server__new("0.0.0.0", 4040, 0);
+  tcp_server_t* server = tcp_server__new(AF_INET, "0.0.0.0", 4040);
 
   // Attach a buffer of size 4KiB to the server for receiving data
-  tcp_server__attach_buf(server, sized_memory__new(KiB(4)));
+  tcp_server__attach_buf(server, buf__new(KiB(4)));
 
   // Start listening for incoming connections, with a backlog of 5
   tcp_server__listen(server, 5);
 
   // Accept a new connection from a client
-  tcp_connection_t
- conn = tcp_server__accept(server);
+  tcp_connection_t conn = tcp_server__accept(server);
 
   // Receive data from the client
-  Box data = tcp_server__recv(server, &conn);
-  printf("[server] received: '%s'\n", _M_cast(char*, data.ptr));
+  box_t data = tcp_server__recv(server, &conn);
+  printf("[server] received: '%s'\n", buf__str(server->buf));
 
   // Prepare a response message
-  const char* resp = "hello from server!";
+  const char* msg = "hello from server!";
+  box_t resp = {.ptr = _M_cast(uint8_t*, msg), .size = strlen(msg)};
 
   // Send the response to the client
-  tcp_connection__send(&conn, box__ctor(_M_cast(uint8_t*, resp), strlen(resp)));
+  tcp_connection__send(&conn, resp);
   printf("[server] send: '%s'\n", resp);
 
   // Close the connection
@@ -77,16 +77,15 @@ also see [examples/tcp_client.c](./examples/tcp_client.c)
 
 ```c
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "ccms/_macros.h"
-#include "ccms/sized_memory.h"
 #include "micro-sockets/tcp.h"
 
 int32_t main(void) {
   // Create a new TCP client and connect to the server at 127.0.0.1:4040
-  tcp_client_t
-* client = tcp_client__new("127.0.0.1", 4040, 0);
+  tcp_client_t* client = tcp_client__new(AF_INET, "127.0.0.1", 4040);
   tcp_client__connect(client);
 
   // Prepare a message to send to the server
@@ -97,11 +96,11 @@ int32_t main(void) {
   printf("[client] send: '%s'\n", msg);
 
   // Attach a buffer of size 4KiB to the client for receiving data
-  tcp_client__attach_buf(client, sized_memory__new(KiB(4)));
+  tcp_client__attach_buf(client, buf__new(KiB(4)));
 
   // Receive a response from the server
-  Box resp = tcp_client__recv(client);
-  printf("[client] received: '%s'\n", _M_cast(char*, resp.ptr));
+  box_t resp = tcp_client__recv(client);
+  printf("[client] received: '%s'\n", buf__str(client->buf));
 
   // Close the connection and free the client
   tcp_client__close(client);

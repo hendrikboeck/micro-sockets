@@ -18,6 +18,7 @@
 /******************************************************************************/
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "ccms/_macros.h"
