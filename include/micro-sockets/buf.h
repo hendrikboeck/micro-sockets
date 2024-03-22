@@ -17,34 +17,67 @@
 /* with this program.  If not, see <https://www.gnu.org/licenses/>.           */
 /******************************************************************************/
 
+#ifndef __MICRO_SOCKETS__BUF__H
+#define __MICRO_SOCKETS__BUF__H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// clang-format off
+
+// Pin to the top of file, becuase it is used in the definitions of include
+// macros like __MICRO_SOCKETS__IS_WINDOWS, DO NOT MOVE THIS INCLUDE !!!
+#include "micro-sockets/_defs.h"
+
+// clang-format on
+
+#include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "ccms/_macros.h"
-#include "micro-sockets/tcp.h"
 
-int32_t main(void) {
-  // Create a new TCP client and connect to the server at 127.0.0.1:4040
-  tcp_client_t* client = tcp_client__new(AF_INET, "127.0.0.1", 4040);
-  tcp_client__connect(client);
+typedef struct buf_t buf_t;
 
-  // Prepare a message to send to the server
-  const char* msg = "hello from client!";
+struct buf_t {
+  uint8_t* ptr;
+  size_t len;
+  size_t size;
+};
 
-  // Send the message to the server
-  tcp_client__send(client, box__ctor(_M_cast(uint8_t*, msg), strlen(msg)));
-  printf("[client] send: '%s'\n", msg);
+__MICRO_SOCKETS__INLINE
+buf_t* buf__new(size_t size) {
+  buf_t* buf = _M_cast(buf_t*, _M_alloc(sizeof(buf_t) + size + 1));
 
-  // Attach a buffer of size 4KiB to the client for receiving data
-  tcp_client__attach_buf(client, buf__new(KiB(4)));
+  if (buf == NULL) {
+    return NULL;
+  }
 
-  // Receive a response from the server
-  Box resp = tcp_client__recv(client);
-  printf("[client] received: '%s'\n", buf__str(client->buf));
+  buf->ptr = _M_cast(uint8_t*, buf) + sizeof(buf_t);
+  buf->len = 0;
+  buf->size = size;
 
-  // Close the connection and free the client
-  tcp_client__close(client);
-  tcp_client__free(client);
-
-  return EXIT_SUCCESS;
+  return buf;
 }
+
+__MICRO_SOCKETS__INLINE
+void buf__free(buf_t* buf) {
+  _M_free(buf);
+}
+
+__MICRO_SOCKETS__INLINE
+void buf__clear(buf_t* buf) {
+  buf->size = 0;
+}
+
+__MICRO_SOCKETS__INLINE
+char* buf__str(buf_t* buf) {
+  buf->ptr[buf->len] = 0x0;
+  return _M_cast(char*, buf->ptr);
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  // __MICRO_SOCKETS__BUF__H

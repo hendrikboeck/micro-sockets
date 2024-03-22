@@ -18,6 +18,7 @@
 /******************************************************************************/
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "ccms/_macros.h"
@@ -27,26 +28,27 @@
 
 int32_t main(void) {
   // Create a new TCP server listening on 0.0.0.0:4040
-  TcpServer* server = tcp_server__new("0.0.0.0", 4040, 0);
+  tcp_server_t* server = tcp_server__new(AF_INET, "0.0.0.0", 4040);
 
   // Attach a buffer of size 4KiB to the server for receiving data
-  tcp_server__attach_buf(server, sized_memory__new(KiB(4)));
+  tcp_server__attach_buf(server, buf__new(KiB(4)));
 
   // Start listening for incoming connections, with a backlog of 5
   tcp_server__listen(server, 5);
 
   // Accept a new connection from a client
-  TcpConnection conn = tcp_server__accept(server);
+  tcp_connection_t conn = tcp_server__accept(server);
 
   // Receive data from the client
   Box data = tcp_server__recv(server, &conn);
-  printf("[server] received: '%s'\n", _M_cast(char*, data.ptr));
+  printf("[server] received: '%s'\n", buf__str(server->buf));
 
   // Prepare a response message
-  const char* resp = "hello from server!";
+  const char* msg = "hello from server!";
+  Box resp = {.ptr = _M_cast(uint8_t*, msg), .size = strlen(msg)};
 
   // Send the response to the client
-  tcp_connection__send(&conn, box__ctor(_M_cast(uint8_t*, resp), strlen(resp)));
+  tcp_connection__send(&conn, resp);
   printf("[server] send: '%s'\n", resp);
 
   // Close the connection

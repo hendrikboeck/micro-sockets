@@ -36,7 +36,8 @@ also see [examples/tcp_server.c](./examples/tcp_server.c)
 
 int32_t main(void) {
   // Create a new TCP server listening on 0.0.0.0:4040
-  TcpServer* server = tcp_server__new("0.0.0.0", 4040, 0);
+  tcp_server_t
+* server = tcp_server__new("0.0.0.0", 4040, 0);
 
   // Attach a buffer of size 4KiB to the server for receiving data
   tcp_server__attach_buf(server, sized_memory__new(KiB(4)));
@@ -45,7 +46,8 @@ int32_t main(void) {
   tcp_server__listen(server, 5);
 
   // Accept a new connection from a client
-  TcpConnection conn = tcp_server__accept(server);
+  tcp_connection_t
+ conn = tcp_server__accept(server);
 
   // Receive data from the client
   Box data = tcp_server__recv(server, &conn);
@@ -83,7 +85,8 @@ also see [examples/tcp_client.c](./examples/tcp_client.c)
 
 int32_t main(void) {
   // Create a new TCP client and connect to the server at 127.0.0.1:4040
-  TcpClient* client = tcp_client__new("127.0.0.1", 4040, 0);
+  tcp_client_t
+* client = tcp_client__new("127.0.0.1", 4040, 0);
   tcp_client__connect(client);
 
   // Prepare a message to send to the server

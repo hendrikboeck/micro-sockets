@@ -38,34 +38,32 @@ extern "C" {
 
 #include <stdint.h>
 
-#include "ccms/sized_memory.h"
-#include "micro-sockets/sock_addr_any.h"
+#include "micro-sockets/buf.h"
+#include "micro-sockets/sockaddr.h"
 
 #if __MICRO_SOCKETS__IS_WINDOWS
-typedef SOCKET SockFd;
+typedef SOCKET sock_t;
 #else
-typedef int32_t SockFd;
+typedef int32_t sock_t;
 #endif  // __MICRO_SOCKETS__IS_WINDOWS
 
 #define RECV_BUF_AUTOTRUNC 1
 
 __MICRO_SOCKETS__INLINE
-ssize_t _sock__recv(SockFd fd, SizedMemory* buf, size_t flags) {
-  int32_t buf_trunc = flags & RECV_BUF_AUTOTRUNC;
-  size_t buf_size = buf_trunc ? buf->size - 1 : buf->size;
-  ssize_t len = recv(fd, buf->ptr, buf_size, 0);
+ssize_t _sock__recv(sock_t fd, buf_t* buf) {
+  ssize_t len = recv(fd, buf->ptr, buf->size, 0);
+  if (len >= 0) buf->len = _M_cast(size_t, len);
 
-  if (len >= 0 && buf_trunc) buf->ptr[len] = 0x0;
   return len;
 }
 
 __MICRO_SOCKETS__INLINE
-ssize_t _sock__send(SockFd fd, Box data) {
+ssize_t _sock__send(sock_t fd, Box data) {
   return send(fd, data.ptr, data.size, 0);
 }
 
 __MICRO_SOCKETS__INLINE
-SockFd _sock__new(int32_t ipv, int32_t proto) {
+sock_t _sock__new(int32_t domain, int32_t proto) {
 #if __MICRO_SOCKETS__IS_WINDOWS
   // Initialize Windows-specific Winsock
   WORD w_version_requested = MAKEWORD(1, 1);
@@ -74,35 +72,18 @@ SockFd _sock__new(int32_t ipv, int32_t proto) {
   // If WSAStartup fails, return NULL
   if (WSAStartup(w_version_requested, &wsa_data) != 0) return NULL;
 #endif
-
-  SockFd sock;
-
   // Create the socket
-  return socket(ipv, SOCK_STREAM, proto);
+  return socket(domain, SOCK_STREAM, proto);
 }
 
 __MICRO_SOCKETS__INLINE
-ssize_t _sock__bind(SockFd fd, SockAddrAny* sa, int32_t ipv) {
-  size_t sa_size;
-  struct sockaddr* sa_ref;
-
-  // If the protocol is IPv4
-  if (ipv == AF_INET) {
-    sa_size = sizeof(struct sockaddr_in);
-    sa_ref = _M_cast(struct sockaddr*, _M_addr(sa->inet));
-  }
-  // If the protocol is IPv6
-  else {
-    sa_size = sizeof(struct sockaddr_in6);
-    sa_ref = _M_cast(struct sockaddr*, _M_addr(sa->inet6));
-  }
-
+ssize_t _sock__bind(sock_t fd, sockaddr_inet_t* sa) {
   // Bind the socket to the address
-  return bind(fd, sa_ref, sa_size);
+  return bind(fd, _M_addr(sa->addr.sa), sa->size);
 }
 
 __MICRO_SOCKETS__INLINE
-int32_t _sock__close(SockFd fd) {
+int32_t _sock__close(sock_t fd) {
 #if __MICRO_SOCKETS__IS_WINDOWS
   return closesocket(fd);
 #else

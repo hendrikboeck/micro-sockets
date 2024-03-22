@@ -17,11 +17,8 @@
 /* with this program.  If not, see <https://www.gnu.org/licenses/>.           */
 /******************************************************************************/
 
-#ifndef __MICRO_SOCKETS_UDP_H
-#define __MICRO_SOCKETS_UDP_H
-
-#include <stdint.h>
-#include <sys/types.h>
+#ifndef __MICRO_SOCKETS__SOCKADDR__H
+#define __MICRO_SOCKETS__SOCKADDR__H
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,42 +26,76 @@ extern "C" {
 
 // clang-format off
 
+// Pin to the top of file, becuase it is used in the definitions of include
+// macros like __MICRO_SOCKETS__IS_WINDOWS, DO NOT MOVE THIS INCLUDE !!!
 #include "micro-sockets/_defs.h"
 
 // clang-format on
 
+#include <assert.h>
+#include <string.h>
+
 #if __MICRO_SOCKETS__IS_WINDOWS
-#include <io.h>
+// WINDOWS specific includes
 #include <winsock.h>
 
 #else
+// UNIX/Linux specific includes
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #endif
 
-#include "ccms/sized_memory.h"
+#include "ccms/_macros.h"
 
-#if __MICRO_SOCKETS__IS_WINDOWS
-typedef SOCKET sock_t;
-#else
-typedef int32_t sock_t;
-#endif
+typedef union sockaddr_union_t sockaddr_union_t;
+union sockaddr_union_t {
+  struct sockaddr sa;
+  struct sockaddr_in in4;
+  struct sockaddr_in6 in6;
+  struct sockaddr_un un;
+  struct sockaddr_storage storage;
+};
 
-#define UDP_BUFTRUNC 1
+typedef struct sockaddr_inet_t sockaddr_inet_t;
+struct sockaddr_inet_t {
+  sa_family_t family;
+  socklen_t size;
+  sockaddr_union_t addr;
+};
 
 __MICRO_SOCKETS__INLINE
-ssize_t _udp_recv(sock_t fd, SizedMemory* buf, size_t flags) {
-  int32_t buf_trunc = flags & UDP_BUFTRUNC;
-  size_t buf_size = buf_trunc ? buf->size - 1 : buf->size;
-  ssize_t len = recv(fd, buf->ptr, buf_size, 0);
+sockaddr_inet_t sockaddr_inet__from(sa_family_t sa_family, const char* addr,
+                                    uint16_t port) {
+  assert(sa_family == AF_INET || sa_family == AF_INET6);
+  sockaddr_inet_t self;
 
-  if (len >= 0 && buf_trunc) buf->ptr[len] = 0x0;
-  return len;
+  memset(&self, 0, sizeof(sockaddr_inet_t));
+  self.family = sa_family;
+
+  if (sa_family == AF_INET) {
+    self.size = sizeof(struct sockaddr_in);
+
+    inet_pton(AF_INET, addr, _M_addr(self.addr.in4.sin_addr));
+    self.addr.in4.sin_family = AF_INET;
+    self.addr.in4.sin_port = htons(port);
+
+  }
+
+  else {
+    self.size = sizeof(struct sockaddr_in6);
+
+    inet_pton(AF_INET6, addr, _M_addr(self.addr.in6.sin6_addr));
+    self.addr.in6.sin6_family = AF_INET6;
+    self.addr.in6.sin6_port = htons(port);
+  }
+
+  return self;
 }
 
 #ifdef __cplusplus
 }
 #endif
 
-// TODO: Implement UDP socket functions
-
-#endif  // __MICRO_SOCKETS_UDP_H
+#endif  // __MICRO_SOCKETS__SOCKADDR__H
