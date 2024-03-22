@@ -82,7 +82,7 @@ int32_t tcp_connection__close(tcp_connection_t* self) {
 }
 
 __MICRO_SOCKETS__INLINE
-ssize_t tcp_connection__send(tcp_connection_t* self, Box data) {
+ssize_t tcp_connection__send(tcp_connection_t* self, box_t data) {
   return _sock__send(self->fd, data);
 }
 
@@ -172,7 +172,7 @@ tcp_connection_t tcp_server__accept(tcp_server_t* self) {
 }
 
 __MICRO_SOCKETS__INLINE
-Box tcp_server__recv(tcp_server_t* self, tcp_connection_t* conn) {
+box_t tcp_server__recv(tcp_server_t* self, tcp_connection_t* conn) {
   ssize_t size = tcp_connection__recv(conn, self->buf);
   if (size < 0) return box__ctor(NULL, 0);
 
@@ -252,12 +252,12 @@ tcp_connection_t tcp_client__as_tcp__connection(const tcp_client_t* self) {
 }
 
 __MICRO_SOCKETS__INLINE
-ssize_t tcp_client__send(tcp_client_t* self, Box data) {
+ssize_t tcp_client__send(tcp_client_t* self, box_t data) {
   return _sock__send(self->sock, data);
 }
 
 __MICRO_SOCKETS__INLINE
-Box tcp_client__recv(tcp_client_t* self) {
+box_t tcp_client__recv(tcp_client_t* self) {
   ssize_t size = _sock__recv(self->sock, self->buf);
   if (size < 0) return box__ctor(NULL, 0);
 

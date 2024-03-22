@@ -58,7 +58,7 @@ ssize_t _sock__recv(sock_t fd, buf_t* buf) {
 }
 
 __MICRO_SOCKETS__INLINE
-ssize_t _sock__send(sock_t fd, Box data) {
+ssize_t _sock__send(sock_t fd, box_t data) {
   return send(fd, data.ptr, data.size, 0);
 }
 

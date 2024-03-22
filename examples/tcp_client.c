@@ -39,7 +39,7 @@ int32_t main(void) {
   tcp_client__attach_buf(client, buf__new(KiB(4)));
 
   // Receive a response from the server
-  Box resp = tcp_client__recv(client);
+  box_t resp = tcp_client__recv(client);
   printf("[client] received: '%s'\n", buf__str(client->buf));
 
   // Close the connection and free the client

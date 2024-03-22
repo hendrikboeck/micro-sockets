@@ -40,12 +40,12 @@ int32_t main(void) {
   tcp_connection_t conn = tcp_server__accept(server);
 
   // Receive data from the client
-  Box data = tcp_server__recv(server, &conn);
+  box_t data = tcp_server__recv(server, &conn);
   printf("[server] received: '%s'\n", buf__str(server->buf));
 
   // Prepare a response message
   const char* msg = "hello from server!";
-  Box resp = {.ptr = _M_cast(uint8_t*, msg), .size = strlen(msg)};
+  box_t resp = {.ptr = _M_cast(uint8_t*, msg), .size = strlen(msg)};
 
   // Send the response to the client
   tcp_connection__send(&conn, resp);
